@@ -50,7 +50,8 @@ def get_day_file(day):
 
 
 def get_inputs_from_web(day):
-    headers = {'Cookie': 'session=%s' % SESSION_COOKIE}
+    headers = {'Cookie': 'session=%s' % SESSION_COOKIE,
+               'User-Agent': 'github.com/mdowell12/advent-of-code-2022 by mattdowell12@gmail.com'}
     resp = requests.get(URL % day, headers=headers)
     resp.raise_for_status()
     return resp.text
