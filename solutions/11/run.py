@@ -18,17 +18,22 @@ def run_2(inputs):
     monkeys = parse_input(inputs, divide_by_three=False)
     monkeys_by_id = {m.id: m for m in monkeys}
 
-    for _ in range(1000):
-        do_round(monkeys_by_id)
+    divide_by = 1
+    for m in monkeys:
+        divide_by *= m.throw_instructions.divisor
+
+    for i in range(10_000):
+        do_round(monkeys_by_id, divide_by=divide_by)
+        counts = ', '.join([str(m.items_inspected) for m in monkeys])
 
     items_inspected_counts = sorted([m.items_inspected for m in monkeys])
     return items_inspected_counts[-1] * items_inspected_counts[-2]
 
 
-def do_round(monkeys_by_id):
+def do_round(monkeys_by_id, divide_by=None):
     for i in range(len(monkeys_by_id)):
         monkey = monkeys_by_id[i]
-        items_for_others = monkey.do_turn()
+        items_for_others = monkey.do_turn(divide_by=divide_by)
         for monkey_id, new_items in items_for_others.items():
             monkeys_by_id[monkey_id].add_items(new_items)
 
@@ -71,7 +76,7 @@ class Monkey:
         self.items_inspected = 0
         self.divide_by_three = divide_by_three
 
-    def do_turn(self):
+    def do_turn(self, divide_by=None):
         result = defaultdict(lambda: [])
         while self.items:
             item = self.items.pop(0)
@@ -81,6 +86,9 @@ class Monkey:
             if self.divide_by_three:
                 item = item // 3
                 if self.DEBUG: print(f"  Worry level divided by 3 to {item}")
+            elif divide_by is not None:
+                item = item % divide_by
+                if self.DEBUG: print(f"  Worry level divided by {divide_by} to {item}")
             next_monkey = self.throw_instructions.find_monkey(item)
             if self.DEBUG: print(f"  Next monkey is {next_monkey}")
             result[next_monkey].append(item)
@@ -109,7 +117,6 @@ class Operation:
         return is_add, list(map(lambda x: int(x) if 'old' not in x else self.VALUE, [left, right]))
 
     def apply(self, old):
-        # import pdb; pdb.set_trace()
         elements = [old if i == self.VALUE else i for i in self.parts]
         if self.is_add:
             return sum(elements)
@@ -129,7 +136,6 @@ class ThrowInstructions:
         self.false_monkey_id = int(false_monkey_id)
 
     def find_monkey(self, value):
-        # import pdb; pdb.set_trace()
         return self.true_monkey_id if value % self.divisor == 0 else self.false_monkey_id
 
 
