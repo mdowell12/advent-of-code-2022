@@ -26,6 +26,13 @@ class Grid2D:
     def value_at_position(self, position, default=None):
         return self.items.get(position, default)
 
+    def positions_from_value(self, value):
+        result = []
+        for (x, y), this_value in self:
+            if this_value == value:
+                result.append((x,y))
+        return result
+
     def position_is_in_grid(self, position):
         x, y = position
         return x >= 0 and y >= 0 and x <= self.max_x and y <= self.max_y
