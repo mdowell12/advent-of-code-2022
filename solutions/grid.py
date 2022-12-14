@@ -4,11 +4,15 @@ class Grid2D:
     """
     Two dimensional grid where (0, 0), (0, 1), (0, 2) is moving rightward on
     the "top" row and (0, 0), (1, 0), (2, 0) is moving downward on the "left" col.
+
+    print_window: example print_window=((500-20, 500+20), (0, overall_max_y + 3))
     """
 
-    def __init__(self, rows, map_fn=None):
+    def __init__(self, rows, map_fn=None, default_if_missing=None, print_window=None):
         self.items, self.max_x, self.max_y = self.parse_rows(rows, map_fn)
         self.current_position = None
+        self.default_if_missing = default_if_missing
+        self.print_window = print_window
 
     def parse_rows(self, rows, map_fn):
         items = {}
@@ -24,7 +28,16 @@ class Grid2D:
         return items, max_x, max_y
 
     def value_at_position(self, position, default=None):
+        if default is None and self.default_if_missing is not None:
+            default = self.default_if_missing
         return self.items.get(position, default)
+
+    def set_value_at_position(self, position, new_value):
+        self.items[position] = new_value
+        if position[0] > self.max_x:
+            self.max_x = position[0]
+        if position[1] > self.max_y:
+            self.max_y = position[1]
 
     def positions_from_value(self, value):
         result = []
@@ -45,8 +58,10 @@ class Grid2D:
 
     def __repr__(self):
         lines = []
-        for y in range(self.max_y+1):
-            line = [str(self.items.get((x, y))) for x in range(self.max_x+1)]
+        x_min, x_max = (0, self.max_x) if self.print_window is None else self.print_window[0]
+        y_min, y_max = (0, self.max_y) if self.print_window is None else self.print_window[1]
+        for y in range(y_min, y_max+1):
+            line = [str(self.value_at_position((x, y))) for x in range(x_min, x_max+1)]
             lines.append(' '.join(line))
         return '\n'.join(lines)
 
