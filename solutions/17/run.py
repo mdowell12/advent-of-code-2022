@@ -67,8 +67,11 @@ def run(inputs, num_rocks):
             import pdb; pdb.set_trace()
         rock = rocks.__next__()
         slot_heights, gas_directions, num_gas_changes = do_rock(rock, slot_heights, gas_directions, max_height)
-        max_height = max(max(v) for v in slot_heights.values())
-        print(i)
+
+        new_max_height = max(max(v) for v in slot_heights.values())
+        increase = new_max_height - max_height
+        max_height = new_max_height
+        print(i, increase)
         # print([sorted(slot_to_height[i]) for i in sorted(slot_to_height)])
         # import pdb; pdb.set_trace()
     # print(slot_to_height)
