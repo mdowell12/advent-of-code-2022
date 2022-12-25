@@ -15,6 +15,16 @@ class Grid2D:
         self.default_if_missing = default_if_missing
         self.print_window = print_window
 
+    def copy(self):
+        new_grid = Grid2D([])
+        new_grid.items = {p: v for p, v in self}
+        new_grid.max_x, new_grid.max_y = self.max_x, self.max_y
+        new_grid.min_x, new_grid.min_y = self.min_x, self.min_y
+        new_grid.current_position = self.current_position
+        new_grid.default_if_missing = self.default_if_missing
+        new_grid.print_window = self.print_window
+        return new_grid
+
     def parse_rows(self, rows, map_fn):
         items = {}
         max_y = len(rows) - 1
