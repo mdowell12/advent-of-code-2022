@@ -48,7 +48,8 @@ def run_1(inputs):
 
 
 def run_2(inputs):
-    return run(inputs, 1_000_000)
+    return run(inputs, 1_000_000_000)
+    # return run(inputs, 1000000000000)
 
 
 def run(inputs, num_rocks):
@@ -60,29 +61,44 @@ def run(inputs, num_rocks):
     num_gas_changes = 0
     rocks = cycle(ROCKS)
 
+    from collections import defaultdict
+    seen = defaultdict(lambda: set())
+    # import pdb; pdb.set_trace()
     for i in range(num_rocks):
-        if i % len(ROCKS) == 0 and num_gas_changes % len(gas_str) == 0 and all(max(slot_heights[i]) == max_height for i in slot_heights):
-            import pdb; pdb.set_trace()
-        if i % len(ROCKS) == 0 and num_gas_changes % len(gas_str) == 0 :
-            import pdb; pdb.set_trace()
         rock = rocks.__next__()
-        slot_heights, gas_directions, num_gas_changes = do_rock(rock, slot_heights, gas_directions, max_height)
+        # if i % len(ROCKS) == 0 and num_gas_changes % len(gas_str) == 0 and all(max(slot_heights[i]) == max_height for i in slot_heights):
+        #     import pdb; pdb.set_trace()
+        # if all(max(slot_heights[i]) == max_height for i in slot_heights):
+        #     import pdb; pdb.set_trace()
+        # print(num_gas_changes)
+        # if num_gas_changes % len(gas_str) == 0:
+        #     import pdb; pdb.set_trace()
+        # if i % len(ROCKS) == 0 and num_gas_changes % len(gas_str) == 0:
+        #     # print_game(slot_heights, rock, None)
+        #     import pdb; pdb.set_trace()
+        #     key = (i, num_gas_changes)
+        #     maxes = ','.join([str(max(v)) for v in slot_heights.values()])
+        #     if key in SEEN and maxes in SEEN[key]:
+        #         import pdb; pdb.set_trace()
+        #     else:
+        #         SEEN[key].add(maxes)
+        # print(len(SEEN))
+
+        slot_heights, gas_directions, num_gas_changes, seen = do_rock(rock, slot_heights, gas_directions, max_height, gas_str, num_gas_changes, seen, i % len(ROCKS) == 0)
+        # num_gas_changes += this_num_gas_changes
 
         new_max_height = max(max(v) for v in slot_heights.values())
         increase = new_max_height - max_height
         max_height = new_max_height
-        print(i, increase)
-        # print([sorted(slot_to_height[i]) for i in sorted(slot_to_height)])
-        # import pdb; pdb.set_trace()
-    # print(slot_to_height)
+        print(i, num_gas_changes)
     return max_height+1
 
 
-def do_rock(rock, slot_heights, gas_directions, max_height):
+def do_rock(rock, slot_heights, gas_directions, max_height, gas_str, num_gas_changes, seen, i_mod_zero):
     rock_positions = starting_rock_position(rock, max_height, slot_heights)
     down = False
-    num_gas_changes = 0
-    
+    # num_gas_changes = 0
+
     while True:
         # move rock
         if down:
@@ -94,6 +110,10 @@ def do_rock(rock, slot_heights, gas_directions, max_height):
         else:
             gas_direction = 1 if gas_directions.__next__() == '>' else -1
             num_gas_changes += 1
+            # if i_mod_zero:
+            #     import pdb; pdb.set_trace()
+            if num_gas_changes % len(gas_str) == 0 and i_mod_zero:
+                import pdb; pdb.set_trace()
             if gas_direction == 1 and rock_positions[6] is not None:
                 pass
             elif gas_direction == -1 and rock_positions[0] is not None:
@@ -104,11 +124,11 @@ def do_rock(rock, slot_heights, gas_directions, max_height):
                     pass
                 else:
                     rock_positions = next_rock_positions
-        
-        def get_move_str(down, gas_direction):
-            if down:
-                return 'down'
-            return 'left' if gas_direction == -1 else 'right'
+
+        # def get_move_str(down, gas_direction):
+        #     if down:
+        #         return 'down'
+        #     return 'left' if gas_direction == -1 else 'right'
         # print_game(slot_heights, rock_positions, get_move_str(down, gas_direction))
         # import pdb; pdb.set_trace()
         down = False if down else True
@@ -121,11 +141,28 @@ def do_rock(rock, slot_heights, gas_directions, max_height):
                 slot_heights[i].append(height)
 
     # Cap min vals for slot height at floor of game
-    min_height = min(min(j for j in i if j != -1) if len(i) > 1 else -1 for i in slot_heights.values())
-    for i in slot_heights:
-        slot_heights[i] = [h for h in slot_heights[i] if h > min_height-1]
+    # min_height = min(max(j for j in i if j != -1) if len(i) > 1 else -1 for i in slot_heights.values())
+    min_height = get_new_floor(slot_heights)
+    # import pdb; pdb.set_trace()
+    # print(min_height)
+    if min_height is not None:
+        for i in slot_heights:
+            slot_heights[i] = [h for h in slot_heights[i] if h > min_height-2]
 
-    return slot_heights, gas_directions, num_gas_changes
+    # print_game(slot_heights, rock_positions, None)
+
+    return slot_heights, gas_directions, num_gas_changes, seen
+
+
+def get_new_floor(slot_heights):
+    result = None
+    for column in slot_heights.values():
+        if column == [-1]:
+            return None
+        highest = max(column)
+        if result is None or highest < result:
+            result = highest
+    return result
 
 
 def print_game(slot_to_height, rock_positions, last_move):
@@ -193,10 +230,6 @@ def invalid_rock_position(i, height, slot_to_height):
     return False
 
 
-def rock_is_stopped(rock, rock_bottom_left, slot_to_height):
-    return True
-
-
 def run_tests():
     test_inputs = """
     >>><<><>><<<>><>>><<<>>><<<><<<>><>><<>>
@@ -206,9 +239,9 @@ def run_tests():
     if result_1 != 3068:
         raise Exception(f"Test 1 did not pass, got {result_1}")
 
-    result_2 = run_2(test_inputs)
-    if result_2 != 1514285714288:
-        raise Exception(f"Test 2 did not pass, got {result_2}")
+    # result_2 = run_2(test_inputs)
+    # if result_2 != 1514285714288:
+    #     raise Exception(f"Test 2 did not pass, got {result_2}")
 
 
 if __name__ == "__main__":
